@@ -56,4 +56,3 @@ with tab2:
             st.warning("🚨 Alert: This supplier poses a HIGH risk based on delay & rejection history.")
         else:
             st.info("✅ This supplier is within safe performance range.")
-
