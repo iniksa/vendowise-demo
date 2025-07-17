@@ -24,32 +24,33 @@ check_password()
 
 st.set_page_config(page_title="VendoWise - Supplier Risk Command Center", layout="wide")
 
-# Custom Style and Branding
-st.markdown(
-    '''
-    <style>
-    .main { background-color: #f8f9fa; }
-    h1, h2, h3 {
-        color: #2b2d42;
-    }
-    .stButton>button {
-        background-color: #1985a1;
-        color: white;
-    }
-    .css-1aumxhk {
-        font-size: 18px;
-        color: #333333;
-    }
-    .st-c9 {
-        background-color: #ffffff;
-    }
-    </style>
-    ''',
-    unsafe_allow_html=True
-)
+# Custom Dark Theme Styling
+st.markdown("""
+<style>
+html, body, [class*="css"]  {
+    font-family: 'Segoe UI', sans-serif;
+}
+.main {
+    background-color: #0e1117;
+    color: #ffffff;
+}
+.st-bb, .st-at {
+    background-color: #262730;
+    color: #ffffff;
+}
+.stButton>button {
+    background-color: #1985a1;
+    color: white;
+    font-weight: bold;
+}
+.block-container {
+    padding: 2rem 2rem;
+}
+</style>
+"", unsafe_allow_html=True)
 
 # Logo & Branding
-st.sidebar.image("https://via.placeholder.com/250x80.png?text=VendoWise", use_column_width=True)
+st.sidebar.image("https://img.icons8.com/clouds/500/analytics.png", width=200)
 st.sidebar.markdown("**Your Supplier Risk Intelligence Hub**")
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Dashboard", "PO Entry Simulation", "Configuration Panel"])
@@ -72,15 +73,19 @@ rejection_threshold = st.sidebar.slider("Max rejection rate (%)", 0, 20, 5) / 10
 if "data" not in st.session_state:
     st.session_state.data = default_data
 
+# Header
+st.markdown("## 🧠 VendoWise: Supplier Risk Intelligence System")
+st.caption("Gain real-time insights into supplier delays and quality issues.")
+
 # Dashboard Page
 if page == "Dashboard":
-    st.title("📊 VendoWise Supplier Risk Dashboard")
+    st.header("📊 Supplier Risk Dashboard")
     df = st.session_state.data.copy()
     df["Delay_Flag"] = df["Avg_Delay_Days"] > delay_threshold
     df["Rejection_Flag"] = df["Rejection_Rate"] > rejection_threshold
     df["Risk_Score"] = df["Delay_Flag"].astype(int)*0.5 + df["Rejection_Flag"].astype(int)*0.5
 
-    st.dataframe(df[["Supplier", "Avg_Delay_Days", "Rejection_Rate", "Risk_Score"]])
+    st.dataframe(df[["Supplier", "Avg_Delay_Days", "Rejection_Rate", "Risk_Score"]], use_container_width=True)
 
     st.subheader("📈 Average Delay by Supplier")
     fig1, ax1 = plt.subplots()
@@ -109,7 +114,7 @@ if page == "Dashboard":
 
 # PO Entry Simulation Page
 elif page == "PO Entry Simulation":
-    st.title("📝 PO Entry Simulation")
+    st.header("📝 PO Entry Simulation")
     df = st.session_state.data
     supplier = st.selectbox("Select Supplier", df["Supplier"].unique())
     st.write(f"Checking supplier risk for: **{supplier}**")
@@ -132,7 +137,7 @@ elif page == "PO Entry Simulation":
 
 # Configuration Panel Page
 elif page == "Configuration Panel":
-    st.title("⚙️ Configuration Panel")
+    st.header("⚙️ Configuration Panel")
     st.write("Upload your custom supplier performance data (.csv format):")
 
     uploaded_file = st.file_uploader("Choose CSV file", type="csv")
