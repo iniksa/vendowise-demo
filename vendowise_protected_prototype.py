@@ -51,8 +51,8 @@ html, body, [class*="css"]  {
 ''', unsafe_allow_html=True)
 
 # Logo & Branding
-st.sidebar.image("https://img.icons8.com/clouds/500/analytics.png", width=200)
-st.sidebar.markdown("**Your Supplier Risk Intelligence Hub**")
+st.sidebar.image("Iniksa-TM.png", use_column_width=True)
+st.sidebar.markdown("**Your Supplier Risk Intelligence Hub**", unsafe_allow_html=True)
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Dashboard", "PO Entry Simulation", "Configuration Panel"])
 
