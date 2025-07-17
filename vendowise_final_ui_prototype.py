@@ -1,4 +1,6 @@
-#Snehaal
+# Recreate the corrected and complete Streamlit app file with properly closed markdown styling block
+
+corrected_code = """
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -25,7 +27,7 @@ check_password()
 st.set_page_config(page_title="VendoWise - Supplier Risk Command Center", layout="wide")
 
 # Custom Dark Theme Styling
-st.markdown("""
+st.markdown(\"""
 <style>
 html, body, [class*="css"]  {
     font-family: 'Segoe UI', sans-serif;
@@ -47,7 +49,7 @@ html, body, [class*="css"]  {
     padding: 2rem 2rem;
 }
 </style>
-"", unsafe_allow_html=True)
+\""", unsafe_allow_html=True)
 
 # Logo & Branding
 st.sidebar.image("https://img.icons8.com/clouds/500/analytics.png", width=200)
@@ -139,7 +141,7 @@ elif page == "PO Entry Simulation":
 elif page == "Configuration Panel":
     st.header("⚙️ Configuration Panel")
     st.write("Upload your custom supplier performance data (.csv format):")
-
+    
     uploaded_file = st.file_uploader("Choose CSV file", type="csv")
     if uploaded_file:
         try:
@@ -154,3 +156,10 @@ elif page == "Configuration Panel":
             st.error(f"Error reading file: {e}")
 
     st.info("Required columns: Supplier, Avg_Delay_Days, Rejection_Rate, Historical_Orders")
+"""
+
+corrected_path = "/mnt/data/vendowise_corrected_prototype.py"
+with open(corrected_path, "w") as f:
+    f.write(corrected_code)
+
+corrected_path
