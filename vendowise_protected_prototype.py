@@ -1,6 +1,5 @@
 # Recreate the corrected and complete Streamlit app file with properly closed markdown styling block
 
-corrected_code = """
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -156,11 +155,4 @@ elif page == "Configuration Panel":
             st.error(f"Error reading file: {e}")
 
     st.info("Required columns: Supplier, Avg_Delay_Days, Rejection_Rate, Historical_Orders")
-"""
-
-corrected_path = "/mnt/data/vendowise_corrected_prototype.py"
-with open(corrected_path, "w") as f:
-    f.write(corrected_code)
-
-corrected_path
 
