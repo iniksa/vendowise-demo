@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import os
 
 # --- Password Protection ---
 def check_password():
@@ -33,7 +34,13 @@ st.sidebar.markdown("### Your Supplier Risk Intelligence Hub")
 # --- Load ML Model ---
 @st.cache_resource
 def load_model():
-    return joblib.load("mock_supplier_risk_model.pkl")
+    st.info(f"Looking for model at: {os.path.abspath('mock_supplier_risk_model.pkl')}")
+    if os.path.exists("mock_supplier_risk_model.pkl"):
+        st.success("✅ Model file found.")
+        return joblib.load("mock_supplier_risk_model.pkl")
+    else:
+        st.error("❌ Model file not found.")
+        return None
 
 model = load_model()
 
