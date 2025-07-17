@@ -139,20 +139,33 @@ elif page == "PO Entry Simulation":
 # Configuration Panel Page
 elif page == "Configuration Panel":
     st.header("⚙️ Configuration Panel")
-    st.write("Upload your custom supplier performance data (.csv format):")
-    
-    uploaded_file = st.file_uploader("Choose CSV file", type="csv")
+    st.write("Upload your custom JDE-style PO data (.csv format):")
+
+    uploaded_file = st.file_uploader("Choose JDE PO CSV", type="csv")
     if uploaded_file:
         try:
-            user_data = pd.read_csv(uploaded_file)
-            required_cols = {"Supplier", "Avg_Delay_Days", "Rejection_Rate", "Historical_Orders"}
-            if required_cols.issubset(set(user_data.columns)):
-                st.session_state.data = user_data
-                st.success("✅ Data uploaded and loaded successfully.")
-            else:
-                st.error("❌ Missing required columns. Please upload a valid template.")
-        except Exception as e:
-            st.error(f"Error reading file: {e}")
+            jde_data = pd.read_csv(uploaded_file, parse_dates=["Order_Date", "Promised_Date", "Received_Date"])
+            required_cols = {"Supplier", "PO_Number", "Order_Date", "Promised_Date", "Received_Date", "Qty_Ordered", "Qty_Rejected"}
+            if required_cols.issubset(set(jde_data.columns)):
+                # Calculate metrics
+                processed = jde_data.copy()
+                processed["Avg_Delay_Days"] = (processed["Received_Date"] - processed["Promised_Date"]).dt.days
+                processed["Rejection_Rate"] = processed["Qty_Rejected"] / processed["Qty_Ordered"]
+                
+                # Aggregate by Supplier
+                agg_df = processed.groupby("Supplier").agg({
+                    "Avg_Delay_Days": "mean",
+                    "Rejection_Rate": "mean",
+                    "PO_Number": "count"
+                }).reset_index()
+                agg_df.rename(columns={"PO_Number": "Historical_Orders"}, inplace=True)
 
-    st.info("Required columns: Supplier, Avg_Delay_Days, Rejection_Rate, Historical_Orders")
+                st.session_state.data = agg_df
+                st.success("✅ JDE-style PO data loaded and converted successfully.")
+            else:
+                st.error("❌ Missing required columns. Please upload a valid JDE PO format.")
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
+
+    st.info("Required columns: Supplier, PO_Number, Order_Date, Promised_Date, Received_Date, Qty_Ordered, Qty_Rejected")
 
