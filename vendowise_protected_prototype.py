@@ -26,7 +26,7 @@ check_password()
 st.set_page_config(page_title="VendoWise - Supplier Risk Command Center", layout="wide")
 
 # Custom Dark Theme Styling
-st.markdown(\"""
+st.markdown('''
 <style>
 html, body, [class*="css"]  {
     font-family: 'Segoe UI', sans-serif;
@@ -48,7 +48,7 @@ html, body, [class*="css"]  {
     padding: 2rem 2rem;
 }
 </style>
-\"\"\", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
 
 # Logo & Branding
 st.sidebar.image("https://img.icons8.com/clouds/500/analytics.png", width=200)
