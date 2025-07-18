@@ -1,133 +1,114 @@
-# vendowise_combined_dashboard.py
 import streamlit as st
 import pandas as pd
-import json
-import plotly.express as px
+import datetime
 
-# ------------------ USER AUTH ------------------
-
+# ---------------------------
+# Authentication
+# ---------------------------
 def login():
-    st.markdown("# 🔑 Login")
+    st.title("🔐 VendoWise Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         if username == "admin" and password == "vendowise123":
-            st.session_state.logged_in = True
+            st.session_state["logged_in"] = True
         else:
-            st.error("Incorrect username or password")
+            st.error("Invalid credentials")
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+# ---------------------------
+# Inventory Risk Dashboard
+# ---------------------------
+def inventory_dashboard(inventory_data, config):
+    st.title("📦 Inventory Risk Dashboard")
 
-if not st.session_state.logged_in:
-    login()
-    st.stop()
+    inventory_data["Next PO Delivery Date"] = pd.to_datetime(inventory_data["Next PO Delivery Date"], errors="coerce")
+    today = pd.Timestamp(datetime.date.today())
 
-# ------------------ UI SETUP ------------------
+    inventory_data["Expected Days Left"] = inventory_data["Current Stock (Qty)"] / inventory_data["Daily Avg Consumption"]
+    inventory_data["Buffer Breach Risk"] = inventory_data["Expected Days Left"] < config["min_stock_buffer_days"]
+    inventory_data["Delay Impact"] = inventory_data["Expected Delay (days)"] > config["delay_days"]
 
-st.set_page_config(page_title="VendoWise Dashboard", layout="wide")
-st.markdown("""
-    <style>
-    .sidebar .sidebar-content { background-color: #1E1E1E; }
-    .stApp { background-color: #0e1117; color: white; }
-    .css-1v0mbdj, .css-hxt7ib { color: white; }
-    </style>
-""", unsafe_allow_html=True)
+    st.subheader("📊 Inventory Risk Summary")
+    st.dataframe(inventory_data.style.applymap(
+        lambda val: "background-color: red" if val is True else "",
+        subset=["Buffer Breach Risk", "Delay Impact"]
+    ))
 
-# ------------------ LOAD CONFIG ------------------
+# ---------------------------
+# Vendor Risk Dashboard
+# ---------------------------
+def vendor_dashboard(vendor_data, config):
+    st.title("🤝 Vendor Risk Dashboard")
 
-CONFIG_PATH = "vendowise_config.json"
-def load_config():
-    with open(CONFIG_PATH, "r") as f:
-        return json.load(f)
+    vendor_data["expected_delivery_date"] = pd.to_datetime(vendor_data["expected_delivery_date"], errors="coerce")
+    vendor_data["actual_delivery_date"] = pd.to_datetime(vendor_data["actual_delivery_date"], errors="coerce")
+    vendor_data["delivery_delay"] = (vendor_data["actual_delivery_date"] - vendor_data["expected_delivery_date"]).dt.days
+    vendor_data["on_time"] = vendor_data["delivery_delay"] <= config["max_po_delay"]
 
-def save_config(cfg):
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(cfg, f, indent=4)
+    st.subheader("🚚 Vendor Delivery Performance")
+    st.dataframe(vendor_data.style.applymap(
+        lambda val: "background-color: red" if val is False else "",
+        subset=["on_time"]
+    ))
 
-config = load_config()
+    st.subheader("📦 Rejection Rate & Freight")
+    vendor_data["rejection_rate (%)"] = (vendor_data["rejected_qty"] / vendor_data["ordered_qty"]) * 100
+    st.dataframe(vendor_data[["vendor_name", "item_code", "rejection_rate (%)", "freight_cost", "location_risk"]]
+                 .style.applymap(
+                     lambda val: "background-color: orange" if isinstance(val, (int, float)) and val > config["max_location_risk"]
+                     else ""
+                 , subset=["location_risk"]))
 
-# ------------------ SIDEBAR ------------------
+# ---------------------------
+# Main App Routing
+# ---------------------------
+def main():
+    st.set_page_config(page_title="VendoWise Dashboard", layout="wide")
 
-st.sidebar.image("Iniksa-TM.png", width=140)
-st.sidebar.header("🧭 Navigation")
-view = st.sidebar.radio("Go to:", ["Supplier Risk", "Inventory Risk", "Configuration"])
-data_mode = st.sidebar.radio("Choose input mode:", ["Sample Data", "Upload CSV"], index=0)
+    if "logged_in" not in st.session_state:
+        st.session_state["logged_in"] = False
 
-# ------------------ LOAD DATA ------------------
+    if not st.session_state["logged_in"]:
+        login()
+    else:
+        st.sidebar.title("📂 Navigation")
+        choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
 
-supplier_sample = pd.read_csv("vendor_data.csv")
-inventory_sample = pd.read_csv("inventory_data.csv")
+        # Configuration sections
+        st.sidebar.title("⚙️ Configuration")
 
-supplier_file = inventory_file = None
-if data_mode == "Upload CSV":
-    if view == "Supplier Risk":
-        supplier_file = st.sidebar.file_uploader("Upload Supplier Data", type="csv")
-    elif view == "Inventory Risk":
-        inventory_file = st.sidebar.file_uploader("Upload Inventory Data", type="csv")
+        st.sidebar.subheader("📦 Inventory Configuration")
+        min_stock_buffer_days = st.sidebar.number_input("Minimum Stock Buffer (Days)", value=7)
+        delay_days = st.sidebar.number_input("Acceptable Delivery Delay (Days)", value=5)
 
-# ------------------ SUPPLIER RISK ------------------
+        st.sidebar.subheader("🤝 Vendor Configuration")
+        max_po_delay = st.sidebar.slider("Max Acceptable PO Delay", 0, 30, value=5)
+        max_location_risk = st.sidebar.slider("Max Location Risk Score", 0, 10, value=6)
 
-def show_supplier_risk():
-    st.markdown("## 📊 Supplier Risk Dashboard")
-    df = pd.read_csv(supplier_file) if supplier_file else supplier_sample
+        config = {
+            "min_stock_buffer_days": min_stock_buffer_days,
+            "delay_days": delay_days,
+            "max_po_delay": max_po_delay,
+            "max_location_risk": max_location_risk
+        }
 
-    expected_cols = ["Supplier", "ordered_qty", "received_qty", "rejected_qty", "expected_delivery_date", "actual_delivery_date", "freight_cost", "payment_terms", "stock_buffer", "location_risk"]
-    missing = [col for col in expected_cols if col not in df.columns]
-    if missing:
-        st.error(f"Missing column: {', '.join(missing)}")
-        return
+        if choice == "Logout":
+            st.session_state["logged_in"] = False
+            st.experimental_rerun()
 
-    df["delay"] = (pd.to_datetime(df["actual_delivery_date"]) - pd.to_datetime(df["expected_delivery_date"]))
-    df["delay"] = df["delay"].dt.days.clip(lower=0)
-    df["rejection"] = df["rejected_qty"] / df["ordered_qty"]
+        # File upload section
+        st.sidebar.title("📁 Upload Data")
+        inventory_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
+        vendor_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
 
-    def compute_risk(row):
-        risk = 0
-        thresholds = config["thresholds"]
-        if config["use_rejected_qty"] and row["rejection"] > thresholds["rejection_rate"]: risk += 1
-        if config["use_partial_delivery"] and row["received_qty"] < row["ordered_qty"]: risk += 1
-        if config["use_payment_terms"] and row["payment_terms"] > thresholds["payment_terms_days"]: risk += 1
-        if config["use_stock_buffer"] and row["stock_buffer"] < thresholds["min_stock_buffer_days"]: risk += 1
-        if config["use_location_risk"] and row["location_risk"] > thresholds["max_location_risk"]: risk += 1
-        if config["use_freight_cost"] and row["freight_cost"] > 10000: risk += 1
-        if row["delay"] > thresholds["delay_days"]: risk += 1
-        return "High" if risk >= 3 else "Low"
+        if choice == "Inventory Dashboard" and inventory_file:
+            inv_data = pd.read_csv(inventory_file)
+            inventory_dashboard(inv_data, config)
+        elif choice == "Vendor Dashboard" and vendor_file:
+            ven_data = pd.read_csv(vendor_file)
+            vendor_dashboard(ven_data, config)
+        else:
+            st.info("Please upload the relevant data file to proceed.")
 
-    df["Risk"] = df.apply(compute_risk, axis=1)
-    fig = px.bar(df, x="Supplier", y="delay", color="Risk", title="Delay Days by Supplier")
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-    st.dataframe(df)
-
-# ------------------ INVENTORY RISK ------------------
-
-def show_inventory_risk():
-    st.markdown("## 📦 Inventory Risk Dashboard")
-    df = pd.read_csv(inventory_file) if inventory_file else inventory_sample
-    if not all(col in df.columns for col in ["item", "current_stock", "avg_daily_usage"]):
-        st.error("Missing 'item' or 'current_stock' column in data.")
-        return
-    df["days_left"] = df["current_stock"] / df["avg_daily_usage"]
-    df["Inventory Risk"] = df["days_left"].apply(lambda x: "Critical" if x < 7 else ("Moderate" if x < 14 else "Safe"))
-    fig = px.bar(df, x="item", y="days_left", color="Inventory Risk", title="Days of Stock Remaining")
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
-    st.dataframe(df)
-
-# ------------------ CONFIGURATION ------------------
-
-def show_config():
-    st.markdown("## ⚙️ Configuration Panel")
-    st.json(config)
-    if st.button("Reload Config"):
-        st.experimental_rerun()
-
-# ------------------ MAIN ------------------
-
-if view == "Supplier Risk":
-    show_supplier_risk()
-elif view == "Inventory Risk":
-    show_inventory_risk()
-else:
-    show_config()
+if __name__ == "__main__":
+    main()
