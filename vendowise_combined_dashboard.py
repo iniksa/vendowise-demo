@@ -8,25 +8,27 @@ import json
 import os
 from datetime import timedelta
 
-sns.set_style("darkgrid")
-
 # ---------------------------
-# Config Management
+# Load or Initialize Config
 # ---------------------------
 config_path = "vendowise_config.json"
 default_config = {
     "min_stock_buffer_days": 7,
     "delay_days": 5,
     "max_po_delay": 5,
-    "max_location_risk": 6,
-    "max_reject": 0.03,
-    "max_payment_terms": 45
+    "max_location_risk": 6
 }
 
 if not os.path.exists(config_path):
     with open(config_path, "w") as f:
         json.dump(default_config, f, indent=4)
 
+
+if not os.path.exists(config_path):
+    with open(config_path, "w") as f:
+        json.dump(default_config, f, indent=4)
+
+# Load or restore config safely
 try:
     with open(config_path, "r") as f:
         config = json.load(f)
@@ -37,6 +39,8 @@ except json.JSONDecodeError:
     config = default_config
     with open(config_path, "w") as f:
         json.dump(config, f, indent=4)
+
+    config = json.load(f)
 
 # ---------------------------
 # Authentication
@@ -50,162 +54,117 @@ def login():
             st.session_state["logged_in"] = True
         else:
             st.error("Invalid credentials")
-            st.stop()
 
 # ---------------------------
-# Load Sample Data
+# Inventory Risk Dashboard
 # ---------------------------
-def load_sample_inventory():
-    return pd.read_csv("inventory_data.csv")
-
-def load_sample_vendor():
-    return pd.read_csv("vendor_data.csv")
-
-# ---------------------------
-# Inventory Dashboard
-# ---------------------------
-def inventory_dashboard(inv_data):
+def inventory_dashboard(inventory_data):
     st.title("📦 Inventory Risk Dashboard")
+
+    inventory_data["Next PO Delivery Date"] = pd.to_datetime(inventory_data["Next PO Delivery Date"], errors="coerce")
     today = pd.Timestamp(datetime.date.today())
-    inv_data["Next PO Delivery Date"] = pd.to_datetime(inv_data["Next PO Delivery Date"], errors="coerce")
-    inv_data["Expected Days Left"] = inv_data["Current Stock (Qty)"] / inv_data["Daily Avg Consumption"]
-    inv_data["Buffer Breach Risk"] = inv_data["Expected Days Left"] < config["min_stock_buffer_days"]
-    inv_data["Delay Impact"] = inv_data["Expected Delay (days)"] > config["delay_days"]
+
+    inventory_data["Expected Days Left"] = inventory_data["Current Stock (Qty)"] / inventory_data["Daily Avg Consumption"]
+    inventory_data["Buffer Breach Risk"] = inventory_data["Expected Days Left"] < config["min_stock_buffer_days"]
+    inventory_data["Delay Impact"] = inventory_data["Expected Delay (days)"] > config["delay_days"]
 
     st.subheader("📊 Inventory Risk Summary")
-    st.dataframe(inv_data.style.applymap(
+    st.dataframe(inventory_data.style.applymap(
         lambda val: "background-color: red" if val is True else "",
         subset=["Buffer Breach Risk", "Delay Impact"]
     ))
 
-    st.subheader("📉 Inventory Risk Classification Chart")
-    risk_counts = inv_data["Buffer Breach Risk"].value_counts().rename({True: "High Risk", False: "Low Risk"})
-    fig, ax = plt.subplots()
-    sns.barplot(x=risk_counts.index, y=risk_counts.values, ax=ax)
-    ax.set_ylabel("Number of Items")
-    ax.set_title("Inventory Risk Classification")
+    st.subheader("🧮 Simulate PO Risk")
+    item_code = st.text_input("Item Code")
+    stock_qty = st.number_input("Current Stock Qty", min_value=0)
+    daily_usage = st.number_input("Daily Usage", min_value=1)
+    buffer_days = st.number_input("Buffer Days", min_value=1, value=config["min_stock_buffer_days"])
+    po_delay = st.number_input("Expected Delay (Days)", min_value=0)
+    po_date = st.date_input("PO Date", min_value=today.date())
+
+    if st.button("Check Risk"):
+        days_until_delivery = (pd.Timestamp(po_date) + timedelta(days=po_delay) - today).days
+        days_until_stockout = stock_qty / daily_usage
+        if days_until_stockout < buffer_days and days_until_delivery > days_until_stockout:
+            risk = "High Risk 🔴"
+        else:
+            risk = "Low Risk 🟢"
+        st.success(f"Predicted Risk for {item_code}: **{risk}**")
+
+# ---------------------------
+# Vendor Risk Dashboard
+# ---------------------------
+def vendor_dashboard(vendor_data):
+    st.title("🤝 Vendor Risk Dashboard")
+
+    vendor_data["expected_delivery_date"] = pd.to_datetime(vendor_data["expected_delivery_date"], errors="coerce")
+    vendor_data["actual_delivery_date"] = pd.to_datetime(vendor_data["actual_delivery_date"], errors="coerce")
+    vendor_data["delivery_delay"] = (vendor_data["actual_delivery_date"] - vendor_data["expected_delivery_date"]).dt.days
+    vendor_data["on_time"] = vendor_data["delivery_delay"] <= config["max_po_delay"]
+
+    st.subheader("🚚 Vendor Delivery Performance")
+    st.dataframe(vendor_data.style.applymap(
+        lambda val: "background-color: red" if val is False else "",
+        subset=["on_time"]
+    ))
+
+    st.subheader("📦 Rejection Rate & Freight")
+    vendor_data["rejection_rate (%)"] = (vendor_data["rejected_qty"] / vendor_data["ordered_qty"]) * 100
+    st.dataframe(vendor_data[["vendor_name", "item_code", "rejection_rate (%)", "freight_cost", "location_risk"]]
+                 .style.applymap(
+                     lambda val: "background-color: orange" if isinstance(val, (int, float)) and val > config["max_location_risk"]
+                     else ""
+                 , subset=["location_risk"]))
+
+    st.subheader("📈 Rejection Rate Chart")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    sns.barplot(x="vendor_name", y="rejection_rate (%)", data=vendor_data, ax=ax)
+    plt.xticks(rotation=45)
     st.pyplot(fig)
 
 # ---------------------------
-# Vendor Dashboard with PO Simulation
-# ---------------------------
-def vendor_dashboard(vendor_data):
-    tab1, tab2 = st.tabs(["📈 Vendor Performance", "🧮 Vendor PO Risk Simulation"])
-    today = pd.Timestamp(datetime.date.today())
-
-    with tab1:
-        st.subheader("🚚 Vendor Delivery Performance")
-        vendor_data["expected_delivery_date"] = pd.to_datetime(vendor_data["expected_delivery_date"], errors="coerce")
-        vendor_data["actual_delivery_date"] = pd.to_datetime(vendor_data["actual_delivery_date"], errors="coerce")
-        vendor_data["delivery_delay"] = (vendor_data["actual_delivery_date"] - vendor_data["expected_delivery_date"]).dt.days
-        vendor_data["on_time"] = vendor_data["delivery_delay"] <= config["max_po_delay"]
-        st.dataframe(vendor_data.style.applymap(
-            lambda val: "background-color: red" if val is False else "",
-            subset=["on_time"]
-        ))
-
-        st.subheader("📦 Rejection & Freight Overview")
-        vendor_data["rejection_rate (%)"] = (vendor_data["rejected_qty"] / vendor_data["ordered_qty"]) * 100
-        st.dataframe(vendor_data[["vendor_name", "item_code", "rejection_rate (%)", "freight_cost", "location_risk"]]
-                     .style.applymap(
-                         lambda val: "background-color: orange" if isinstance(val, (int, float)) and val > config["max_location_risk"]
-                         else "", subset=["location_risk"]))
-
-        st.subheader("📊 Rejection Rate Chart")
-        fig, ax = plt.subplots(figsize=(8, 4))
-        sns.barplot(x="vendor_name", y="rejection_rate (%)", data=vendor_data, ax=ax)
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
-
-    with tab2:
-        st.markdown("## ✏️ Vendor PO Risk Simulation")
-        supplier = st.selectbox("Select Supplier", vendor_data["vendor_name"].unique())
-        delay = st.number_input("Expected Delay (days)", 0, 30, 5)
-        reject = st.number_input("Expected Rejection Rate (%)", 0.0, 20.0, 1.0) / 100
-        payment = st.number_input("Payment Terms (days)", 15, 120, 45)
-        stock = st.number_input("Available Stock Buffer (days)", 0, 30, 10)
-        location = st.slider("Location Risk Index (0–10)", 0, 10, 5)
-
-        risk = "High Risk 🔴" if (
-            delay > config["max_po_delay"] or
-            reject > config["max_reject"] or
-            payment > config["max_payment_terms"] or
-            stock < config["min_stock_buffer_days"] or
-            location > config["max_location_risk"]
-        ) else "Low Risk 🟢"
-        st.success(f"Predicted Risk for {supplier}: **{risk}**")
-
-# ---------------------------
-# Main App
+# Main App Routing
 # ---------------------------
 def main():
-    if not st.session_state.get('authenticated', False):
-        show_login()
-        st.stop()
-    st.set_page_config(page_title="VendoWise", layout="wide")
+    st.set_page_config(page_title="VendoWise Dashboard", layout="wide")
 
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
 
     if not st.session_state["logged_in"]:
         login()
-        st.stop()
-
-    # Sidebar Logo
-    try:
-        st.sidebar.image("Iniksa-TM.png", width=150)
-    except:
-        st.sidebar.markdown("**VendoWise**")
-
-    st.sidebar.title("Supplier Risk Intelligence Hub")
-
-    
-with st.sidebar.expander("⚙️ Threshold Configuration", expanded=True):
-    config["min_stock_buffer_days"] = st.slider("Min Stock Buffer (Days)", min_value=0, max_value=30, value=config["min_stock_buffer_days"], key="min_stock_buffer")
-    config["delay_days"] = st.slider("Max Acceptable Delivery Delay (Days)", min_value=0, max_value=15, value=config["delay_days"], key="delay_days_thresh")
-    config["max_po_delay"] = st.slider("Max PO Delay", min_value=0, max_value=30, value=config["max_po_delay"], key="max_po_delay_thresh")
-    config["max_location_risk"] = st.slider("Max Location Risk Score", min_value=0, max_value=10, value=config["max_location_risk"], key="max_loc_risk_thresh")
-    config["max_reject"] = st.slider("Max Rejection Rate (%)", min_value=0.0, max_value=20.0, value=config["max_reject"] * 100, key="max_reject_thresh") / 100
-    config["max_payment_terms"] = st.slider("Max Payment Terms (Days)", min_value=15, max_value=120, value=config["max_payment_terms"], key="max_payment_terms_thresh")
-
-
-    st.sidebar.markdown("### 📁 Upload Data")
-    data_mode = st.sidebar.radio("Choose data input mode", ["Sample Data", "Upload Your File"])
-    if st.sidebar.button("Save Settings"):
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
-        st.success("Settings saved successfully.")
-
-    st.sidebar.markdown("### 🧭 Navigation")
-    choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
-
-    # Load data
-    if data_mode == "Sample Data":
-        inventory_data = load_sample_inventory()
-        vendor_data = load_sample_vendor()
     else:
-        inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
-        ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
-        inventory_data = pd.read_csv(inv_file) if inv_file else None
-        vendor_data = pd.read_csv(ven_file) if ven_file else None
+        st.sidebar.title("📂 Navigation")
+        choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Save Settings", "Logout"])
 
-    if choice == "Inventory Dashboard":
-        if inventory_data is not None:
-            inventory_dashboard(inventory_data)
-        else:
-            st.warning("Upload or select sample inventory data.")
-    elif choice == "Vendor Dashboard":
-        if vendor_data is not None:
-            vendor_dashboard(vendor_data)
-        else:
-            st.warning("Upload or select sample vendor data.")
-    elif choice == "Logout":
-        st.session_state["logged_in"] = False
-        st.experimental_rerun()
+        # Configuration sidebar
+        st.sidebar.title("⚙️ Configuration")
+        config["min_stock_buffer_days"] = st.sidebar.number_input("Minimum Stock Buffer (Days)", value=config["min_stock_buffer_days"])
+        config["delay_days"] = st.sidebar.number_input("Acceptable Delivery Delay (Days)", value=config["delay_days"])
+        config["max_po_delay"] = st.sidebar.slider("Max Acceptable PO Delay", 0, 30, value=config["max_po_delay"])
+        config["max_location_risk"] = st.sidebar.slider("Max Location Risk Score", 0, 10, value=config["max_location_risk"])
 
+        # Uploads
+        st.sidebar.title("📁 Upload Data")
+        inventory_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
+        vendor_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
+
+        if choice == "Inventory Dashboard" and inventory_file:
+            inv_data = pd.read_csv(inventory_file)
+            inventory_dashboard(inv_data)
+
+        elif choice == "Vendor Dashboard" and vendor_file:
+            ven_data = pd.read_csv(vendor_file)
+            vendor_dashboard(ven_data)
+
+        elif choice == "Save Settings":
+            with open(config_path, "w") as f:
+                json.dump(config, f, indent=4)
+            st.success("Settings saved successfully.")
+
+        elif choice == "Logout":
+            st.session_state["logged_in"] = False
+            st.experimental_rerun()
 
 if __name__ == "__main__":
-    main()
-
-if __name__ == '__main__':
     main()
