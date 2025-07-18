@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import datetime
@@ -178,7 +177,7 @@ st.sidebar.title("Navigation")
 choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
 
 # Load data
-if data_mode == "Sample Data":
+if data_input_mode == "Sample Data":
     inventory_data = load_sample_inventory()
     vendor_data = load_sample_vendor()
 else:
@@ -203,4 +202,3 @@ else:
 
 if __name__ == "__main__":
     main()
-
