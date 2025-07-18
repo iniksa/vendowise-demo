@@ -29,6 +29,17 @@ st.title("📊 VendoWise Unified Risk Dashboard")
 @st.cache_data
 def load_supplier_data():
     return pd.read_csv("vendor_data.csv")
+    
+# Validate required columns
+expected_columns = [
+    "Supplier", "Expected Delay (days)", "Rejection Rate",
+    "Payment Terms", "Stock Buffer (days)", "Location Risk Index"
+]
+missing_cols = [col for col in expected_columns if col not in df.columns]
+if missing_cols:
+    st.warning(f"⚠️ Missing columns in vendor_data.csv: {', '.join(missing_cols)}")
+    st.stop()
+
 
 @st.cache_data
 def load_inventory_data():
