@@ -41,24 +41,24 @@ if nav == "Supplier Risk":
     import os
     
     # ----------------- PASSWORD PROTECTION -----------------
-    '''
-    def check_password():
-        def password_entered():
-            if st.session_state["password"] == "vendowise123":
-                st.session_state["password_correct"] = True
-            else:
-                st.session_state["password_correct"] = False
     
-        if "password_correct" not in st.session_state:
-            st.text_input("Enter password", type="password", on_change=password_entered, key="password")
-            st.stop()
-        elif not st.session_state["password_correct"]:
-            st.text_input("Enter password", type="password", on_change=password_entered, key="password")
-            st.error("😕 Password incorrect")
-            st.stop()
+    #def check_password():
+    #    def password_entered():
+    #        if st.session_state["password"] == "vendowise123":
+    #            st.session_state["password_correct"] = True
+    #        else:
+    #            st.session_state["password_correct"] = False
+    #
+     #   if "password_correct" not in st.session_state:
+     #       st.text_input("Enter password", type="password", on_change=password_entered, key="password")
+     #       st.stop()
+      #  elif not st.session_state["password_correct"]:
+      #      st.text_input("Enter password", type="password", on_change=password_entered, key="password")
+      #      st.error("😕 Password incorrect")
+      #      st.stop()
+    #
+    #check_password() 
     
-    check_password() 
-    '''
     # -------------------------------------------------------
     
     st.set_page_config(page_title="VendoWise Dashboard", layout="wide")
