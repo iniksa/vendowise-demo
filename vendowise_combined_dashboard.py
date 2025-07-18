@@ -24,11 +24,11 @@ default_config = {
 }
 
 if not os.path.exists(config_path):
-with open(config_path, "w") as f:
-    json.dump(config, f, indent=4)
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=4)
 
 try:
-with open(config_path, "w") as f:
+    with open(config_path, "r") as f:
         config = json.load(f)
         for key in default_config:
             if key not in config:
@@ -149,6 +149,7 @@ def main():
         st.stop()
 
     # Sidebar Logo
+try:
     try:
         st.sidebar.image("Iniksa-TM.png", width=150)
     except:
@@ -202,4 +203,3 @@ st.success("Settings saved successfully.")
 
 if __name__ == "__main__":
     main()
-
