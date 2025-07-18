@@ -24,6 +24,7 @@ default_config = {
 }
 
 if not os.path.exists(config_path):
+    config = default_config
     with open(config_path, "w") as f:
         json.dump(config, f, indent=4)
 
@@ -150,7 +151,6 @@ def main():
 
     # Sidebar Logo
 try:
-    try:
         st.sidebar.image("Iniksa-TM.png", width=150)
     except:
         st.sidebar.markdown("**VendoWise**")
