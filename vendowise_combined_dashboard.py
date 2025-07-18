@@ -176,13 +176,13 @@ st.success("Settings saved successfully.")
 
 if st.session_state.get("logged_in"):
     st.sidebar.title("Navigation")
-choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
+    choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
 
 # Load data
     if data_input_mode == "Sample Data":
     inventory_data = load_sample_inventory()
     vendor_data = load_sample_vendor()
-else:
+    else:
     inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
     ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
     inventory_data = pd.read_csv(inv_file) if inv_file else None
