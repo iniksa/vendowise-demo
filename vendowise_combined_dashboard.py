@@ -150,7 +150,7 @@ def main():
         st.stop()
 
     # Sidebar Logo
-try:
+    try:
         st.sidebar.image("Iniksa-TM.png", width=150)
     except:
         st.sidebar.markdown("**VendoWise**")
