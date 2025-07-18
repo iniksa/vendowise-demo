@@ -174,8 +174,8 @@ with open(config_path, "w") as f:
     json.dump(config, f, indent=4)
 st.success("Settings saved successfully.")
 
-    st.sidebar.title("Navigation")
-    choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
+st.sidebar.title("Navigation")
+choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
 
     # Load data
     if data_mode == "Sample Data":
@@ -203,3 +203,4 @@ st.success("Settings saved successfully.")
 
 if __name__ == "__main__":
     main()
+
