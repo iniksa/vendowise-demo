@@ -4,39 +4,21 @@ import pandas as pd
 import json
 import plotly.express as px
 
-# ---------------------- Configuration ----------------------
-CONFIG_PATH = "vendowise_config.json"
-DEFAULT_USER = "admin"
-DEFAULT_PASS = "vendowise123"
-
-# ---------------------- Load Configuration ----------------------
-def load_config():
-    try:
-        with open(CONFIG_PATH) as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_config(cfg):
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(cfg, f, indent=4)
-
-config = load_config()
+st.set_page_config(layout="wide", page_title="VendoWise Dashboard")
 
 # ---------------------- Login ----------------------
 def login():
     st.sidebar.image("Iniksa-TM.png", width=150)
-    st.sidebar.title("🧭 Navigation")
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
 
-    if not st.session_state.logged_in:
+    if not st.session_state.authenticated:
         st.title("🔐 Login")
-        user = st.text_input("Username")
+        username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         if st.button("Login"):
-            if user == DEFAULT_USER and password == DEFAULT_PASS:
-                st.session_state.logged_in = True
+            if username == "admin" and password == "vendowise123":
+                st.session_state.authenticated = True
             else:
                 st.error("Invalid credentials")
         st.stop()
@@ -44,83 +26,138 @@ def login():
 login()
 
 # ---------------------- Sidebar ----------------------
-page = st.sidebar.radio("Go to:", ["Supplier Risk", "Inventory Risk", "Configuration"])
+st.sidebar.header("🧭 Navigation")
+section = st.sidebar.radio("Go to:", ["Supplier Risk", "Inventory Risk", "Configuration"])
 input_mode = st.sidebar.radio("Choose input mode:", ["Sample Data", "Upload CSV"])
 
-# ---------------------- Data Loaders ----------------------
-def load_vendor_data():
+# ---------------------- Config Handling ----------------------
+config_file = "vendowise_config.json"
+default_config = {
+    "use_rejected_qty": True,
+    "use_freight_cost": True,
+    "use_payment_terms": True,
+    "use_stock_buffer": True,
+    "use_location_risk": True,
+    "use_partial_delivery": False,
+    "thresholds": {
+        "delay_days": 5,
+        "rejection_rate": 0.05,
+        "payment_terms_days": 60,
+        "min_stock_buffer_days": 7,
+        "max_location_risk": 5
+    }
+}
+
+def load_config():
+    try:
+        with open(config_file, "r") as f:
+            return json.load(f)
+    except:
+        return default_config
+
+config = load_config()
+
+# ---------------------- Supplier Data ----------------------
+def load_supplier_data():
     if input_mode == "Upload CSV":
-        uploaded = st.sidebar.file_uploader("Upload Vendor CSV", type="csv", key="vendor")
+        uploaded = st.sidebar.file_uploader("Upload vendor_data.csv", type="csv")
         if uploaded:
-            return pd.read_csv(uploaded)
+            df = pd.read_csv(uploaded)
         else:
-            st.warning("Please upload vendor_data.csv file")
+            st.warning("Please upload vendor_data.csv")
             st.stop()
     else:
-        return pd.read_csv("vendor_data.csv")
+        df = pd.read_csv("vendor_data.csv")
 
+    # Column mapping
+    rename_map = {
+        "vendor_name": "Supplier",
+        "payment_terms_days": "Payment Terms",
+        "stock_buffer_days": "Stock Buffer (days)",
+        "location_risk": "Location Risk Index"
+    }
+    df = df.rename(columns=rename_map)
+
+    expected = ["Supplier", "ordered_qty", "received_qty", "rejected_qty", "expected_delivery_date",
+                "actual_delivery_date", "freight_cost", "Payment Terms", "Stock Buffer (days)", "Location Risk Index"]
+    missing = [col for col in expected if col not in df.columns]
+    if missing:
+        st.error(f"Missing column(s): {', '.join(missing)}")
+        st.stop()
+
+    return df
+
+# ---------------------- Inventory Data ----------------------
 def load_inventory_data():
     if input_mode == "Upload CSV":
-        uploaded = st.sidebar.file_uploader("Upload Inventory CSV", type="csv", key="inventory")
+        uploaded = st.sidebar.file_uploader("Upload inventory_data.csv", type="csv")
         if uploaded:
-            return pd.read_csv(uploaded)
+            df = pd.read_csv(uploaded)
         else:
-            st.warning("Please upload inventory_data.csv file")
+            st.warning("Please upload inventory_data.csv")
             st.stop()
     else:
-        return pd.read_csv("inventory_data.csv")
+        df = pd.read_csv("inventory_data.csv")
+
+    df = df.rename(columns={
+        "Item Code": "item",
+        "Current Stock (Qty)": "current_stock",
+        "Daily Avg Consumption": "daily_consumption",
+        "Buffer Stock (days)": "buffer_days",
+        "Expected Delay (days)": "expected_delay"
+    })
+
+    expected = ["item", "current_stock", "daily_consumption", "buffer_days", "expected_delay"]
+    missing = [col for col in expected if col not in df.columns]
+    if missing:
+        st.error(f"Missing column(s): {', '.join(missing)}")
+        st.stop()
+
+    return df
 
 # ---------------------- Supplier Risk ----------------------
-if page == "Supplier Risk":
+if section == "Supplier Risk":
     st.title("📊 Supplier Risk Dashboard")
-    df = load_vendor_data()
+    df = load_supplier_data()
 
-    required = ["Supplier", "ordered_qty", "received_qty", "rejected_qty", "expected_delivery_date"]
-    for col in required:
-        if col not in df.columns:
-            st.error(f"Missing column: {col}")
-            st.stop()
+    delay = (pd.to_datetime(df["actual_delivery_date"]) - pd.to_datetime(df["expected_delivery_date"])).dt.days
+    df["delay_days"] = delay.fillna(0)
+    df["rejection_rate"] = df["rejected_qty"] / df["ordered_qty"]
 
-    # Apply risk logic
-    df["Delay (days)"] = pd.to_datetime(df["expected_delivery_date"]) - pd.Timestamp.now()
-    df["Delay (days)"] = df["Delay (days)"].dt.days
-    df["Rejection Rate"] = df["rejected_qty"] / df["ordered_qty"]
+    def assess(row):
+        if (config["use_partial_delivery"] and row["received_qty"] < row["ordered_qty"]) or            (config["use_rejected_qty"] and row["rejection_rate"] > config["thresholds"]["rejection_rate"]) or            (config["use_freight_cost"] and row["freight_cost"] > 0) or            (config["use_payment_terms"] and row["Payment Terms"] > config["thresholds"]["payment_terms_days"]) or            (config["use_stock_buffer"] and row["Stock Buffer (days)"] < config["thresholds"]["min_stock_buffer_days"]) or            (config["use_location_risk"] and row["Location Risk Index"] > config["thresholds"]["max_location_risk"]) or            (row["delay_days"] > config["thresholds"]["delay_days"]):
+            return "High Risk 🔴"
+        return "Low Risk 🟢"
 
-    def classify(row):
-        if config.get("use_rejected_qty", True) and row["Rejection Rate"] > config["thresholds"]["rejection_rate"]:
-            return "High"
-        if config.get("use_partial_delivery", False) and row["received_qty"] < row["ordered_qty"]:
-            return "High"
-        if row["Delay (days)"] > config["thresholds"]["delay_days"]:
-            return "High"
-        return "Low"
+    df["risk"] = df.apply(assess, axis=1)
 
-    df["Risk"] = df.apply(classify, axis=1)
-
-    fig = px.bar(df, x="Supplier", y="Delay (days)", color="Risk", title="Supplier Risk Forecast")
+    fig = px.bar(df, x="Supplier", y="delay_days", color="risk", title="Supplier Delay vs Risk",
+                 color_discrete_map={"High Risk 🔴": "#FF4B4B", "Low Risk 🟢": "#00C853"})
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(30,30,30,0.1)')
     st.plotly_chart(fig, use_container_width=True)
+
     st.dataframe(df)
 
 # ---------------------- Inventory Risk ----------------------
-elif page == "Inventory Risk":
+elif section == "Inventory Risk":
     st.title("📦 Inventory Risk Dashboard")
     df = load_inventory_data()
-    required = ["item", "current_stock", "daily_demand", "lead_time_days"]
-    for col in required:
-        if col not in df.columns:
-            st.error(f"Missing '{col}' column in data.")
-            st.stop()
 
-    df["days_of_stock"] = df["current_stock"] / df["daily_demand"]
-    df["risk"] = df["days_of_stock"] < df["lead_time_days"]
+    df["days_left"] = df["current_stock"] / df["daily_consumption"]
+    df["risk"] = df["days_left"] < df["buffer_days"]
 
-    fig = px.bar(df, x="item", y="days_of_stock", color="risk", title="Inventory Buffer Forecast")
+    fig = px.bar(df, x="item", y="days_left", color="risk", title="Inventory Buffer Forecast",
+                 color_discrete_map={True: "#FF4B4B", False: "#00C853"})
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(30,30,30,0.1)')
     st.plotly_chart(fig, use_container_width=True)
+
     st.dataframe(df)
 
 # ---------------------- Config Panel ----------------------
-else:
+elif section == "Configuration":
     st.title("⚙️ Configuration Panel")
     st.json(config)
-    if st.button("🔄 Reload Config"):
-        st.rerun()
+    if st.button("🔁 Reload Config"):
+        st.cache_data.clear()
+        st.experimental_rerun()
+
