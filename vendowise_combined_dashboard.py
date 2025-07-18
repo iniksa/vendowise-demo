@@ -179,13 +179,13 @@ choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "
 
 # Load data
 if data_mode == "Sample Data":
-inventory_data = load_sample_inventory()
-vendor_data = load_sample_vendor()
-    else:
-inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
-ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
-inventory_data = pd.read_csv(inv_file) if inv_file else None
-vendor_data = pd.read_csv(ven_file) if ven_file else None
+    inventory_data = load_sample_inventory()
+    vendor_data = load_sample_vendor()
+else:
+    inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
+    ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
+    inventory_data = pd.read_csv(inv_file) if inv_file else None
+    vendor_data = pd.read_csv(ven_file) if ven_file else None
 
     if choice == "Inventory Dashboard":
         if inventory_data is not None:
@@ -203,3 +203,4 @@ vendor_data = pd.read_csv(ven_file) if ven_file else None
 
 if __name__ == "__main__":
     main()
+
