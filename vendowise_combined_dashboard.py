@@ -164,11 +164,6 @@ with st.sidebar.expander("⚙️ Threshold Configuration", expanded=True):
     config["max_reject"] = st.slider("Max Rejection Rate (%)", min_value=0.0, max_value=20.0, value=config["max_reject"] * 100, key="max_reject_thresh") / 100
     config["max_payment_terms"] = st.slider("Max Payment Terms (Days)", min_value=15, max_value=120, value=config["max_payment_terms"], key="max_payment_terms_thresh")
 
-    config["delay_days"] = st.sidebar.slider("Max Acceptable Delivery Delay (Days)", min_value=0, max_value=15, value=config["delay_days"], key="delay_days_thresh")
-    config["max_po_delay"] = st.sidebar.slider("Max PO Delay", min_value=0, max_value=30, value=config["max_po_delay"], key="max_po_delay_thresh")
-    config["max_location_risk"] = st.sidebar.slider("Max Location Risk Score", min_value=0, max_value=10, value=config["max_location_risk"], key="max_loc_risk_thresh")
-    config["max_reject"] = st.sidebar.slider("Max Rejection Rate (%)", min_value=0.0, max_value=20.0, value=config["max_reject"] * 100, key="max_reject_thresh") / 100
-    config["max_payment_terms"] = st.sidebar.slider("Max Payment Terms (Days)", min_value=15, max_value=120, value=config["max_payment_terms"], key="max_payment_terms_thresh")
 
     st.sidebar.markdown("### 📁 Upload Data")
     data_mode = st.sidebar.radio("Choose data input mode", ["Sample Data", "Upload Your File"])
