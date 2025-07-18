@@ -148,9 +148,9 @@ def main():
 
     # Sidebar Logo
     try:
+        st.sidebar.image("vendowise_logo.png", use_column_width=True)
     except:
-
-
+        pass  # fallback if logo not found
     min_stock_buffer = st.slider("Min Stock Buffer (Days)", 0, 30, 7)
     max_delivery_delay = st.slider("Max Acceptable Delivery Delay (Days)", 0, 15, 5)
     max_po_delay = st.slider("Max PO Delay", 0, 30, 5)
@@ -166,6 +166,7 @@ with open(config_path, "w") as f:
 
 
 if st.session_state.get("logged_in"):
+    main()
 
 # Load data
     if data_input_mode == "Sample Data":
@@ -177,9 +178,11 @@ if st.session_state.get("logged_in"):
     if choice == "Inventory Dashboard":
         if inventory_data is not None:
             inventory_dashboard(inventory_data)
-        else:
-            st.warning("Upload or select sample inventory data.")
     elif choice == "Logout":
+        st.session_state["logged_in"] = False
+        st.experimental_rerun()
+    else:
+        st.warning("Upload or select sample inventory data.")
         st.session_state["logged_in"] = False
         st.experimental_rerun()
 
