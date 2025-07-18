@@ -165,11 +165,11 @@ with st.sidebar.expander("⚙️ Threshold Configuration", expanded=True):
     config["max_payment_terms"] = st.slider("Max Payment Terms (Days)", min_value=15, max_value=120, value=config["max_payment_terms"], key="max_payment_terms_thresh")
 
     config["min_stock_buffer_days"] = st.slider("Min Stock Buffer (Days)", min_value=0, max_value=30, value=config["min_stock_buffer_days"], key="min_stock_buffer")
-    config["delay_days"] = st.sidebar.slider("Max Acceptable Delivery Delay (Days)", key="delay_days_thresh", 0, 15, config["delay_days"])
-    config["max_po_delay"] = st.sidebar.slider("Max PO Delay", key="max_po_delay_thresh", 0, 30, config["max_po_delay"])
-    config["max_location_risk"] = st.sidebar.slider("Max Location Risk Score", key="max_loc_risk_thresh", 0, 10, config["max_location_risk"])
-    config["max_reject"] = st.sidebar.slider("Max Rejection Rate (%)", key="max_reject_thresh", 0.0, 20.0, config["max_reject"] * 100) / 100
-    config["max_payment_terms"] = st.sidebar.slider("Max Payment Terms (Days)", key="max_payment_terms_thresh", 15, 120, config["max_payment_terms"])
+    config["delay_days"] = st.sidebar.slider("Max Acceptable Delivery Delay (Days)", min_value=0, max_value=15, value=config["delay_days"], key="delay_days_thresh")
+    config["max_po_delay"] = st.sidebar.slider("Max PO Delay", min_value=0, max_value=30, value=config["max_po_delay"], key="max_po_delay_thresh")
+    config["max_location_risk"] = st.sidebar.slider("Max Location Risk Score", min_value=0, max_value=10, value=config["max_location_risk"], key="max_loc_risk_thresh")
+    config["max_reject"] = st.sidebar.slider("Max Rejection Rate (%)", min_value=0.0, max_value=20.0, value=config["max_reject"] * 100, key="max_reject_thresh") / 100
+    config["max_payment_terms"] = st.sidebar.slider("Max Payment Terms (Days)", min_value=15, max_value=120, value=config["max_payment_terms"], key="max_payment_terms_thresh")
 
     st.sidebar.markdown("### 📁 Upload Data")
     data_mode = st.sidebar.radio("Choose data input mode", ["Sample Data", "Upload Your File"])
