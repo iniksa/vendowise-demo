@@ -25,7 +25,7 @@ config = load_config()
 
 # ---------------------- Login ----------------------
 def login():
-    st.sidebar.image("https://i.ibb.co/jT4D1t2/iniksa-logo-dark.png", width=150)
+    st.sidebar.image("Iniksa-TM.png", width=150)
     st.sidebar.title("🧭 Navigation")
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
