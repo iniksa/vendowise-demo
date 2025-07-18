@@ -132,7 +132,6 @@ def vendor_dashboard(vendor_data):
             stock < config["min_stock_buffer_days"] or
             location > config["max_location_risk"]
         ) else "Low Risk 🟢"
-st.success("Settings saved successfully.")
 
 # ---------------------------
 # Main App
@@ -149,14 +148,9 @@ def main():
 
     # Sidebar Logo
     try:
-        st.sidebar.image("Iniksa-TM.png", width=150)
     except:
-        st.sidebar.markdown("**VendoWise**")
 
-    st.sidebar.title("Supplier Risk Intelligence Hub")
 
-    st.sidebar.header("Threshold Configuration")
-with st.sidebar.expander("🔧 Threshold Configuration", expanded=False):
     min_stock_buffer = st.slider("Min Stock Buffer (Days)", 0, 30, 7)
     max_delivery_delay = st.slider("Max Acceptable Delivery Delay (Days)", 0, 15, 5)
     max_po_delay = st.slider("Max PO Delay", 0, 30, 5)
@@ -164,25 +158,19 @@ with st.sidebar.expander("🔧 Threshold Configuration", expanded=False):
     max_rejection_rate = st.slider("Max Rejection Rate (%)", 0.0, 20.0, 3.0)
     max_payment_terms = st.slider("Max Payment Terms (Days)", 15, 120, 45)
 
-with st.sidebar.expander("📥 Data Input Mode", expanded=False):
     data_input_mode = st.radio("Choose data input mode", ["Sample Data", "Upload Your File"], index=0)
     st.button("Save Settings")
 
 with open(config_path, "w") as f:
     json.dump(config, f, indent=4)
-st.success("Settings saved successfully.")
 
 
 if st.session_state.get("logged_in"):
-    st.sidebar.title("Navigation")
-    choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
 
 # Load data
     if data_input_mode == "Sample Data":
         inventory_data = load_sample_inventory()
         vendor_data = load_sample_vendor()
-        inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
-        ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
         inventory_data = pd.read_csv(inv_file) if inv_file else None
         vendor_data = pd.read_csv(ven_file) if ven_file else None
 
