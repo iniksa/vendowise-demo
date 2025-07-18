@@ -190,12 +190,12 @@ if st.session_state.get("logged_in"):
 
     if choice == "Inventory Dashboard":
         if inventory_data is not None:
-        inventory_dashboard(inventory_data)
+            inventory_dashboard(inventory_data)
     else:
         st.warning("Upload or select sample inventory data.")
     elif choice == "Vendor Dashboard":
         if vendor_data is not None:
-        vendor_dashboard(vendor_data)
+            vendor_dashboard(vendor_data)
     else:
         st.warning("Upload or select sample vendor data.")
     elif choice == "Logout":
