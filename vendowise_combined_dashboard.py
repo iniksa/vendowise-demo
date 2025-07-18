@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import datetime
@@ -23,19 +24,19 @@ default_config = {
 }
 
 if not os.path.exists(config_path):
-    with open(config_path, "w") as f:
-        json.dump(default_config, f, indent=4)
+with open(config_path, "w") as f:
+    json.dump(config, f, indent=4)
 
 try:
-    with open(config_path, "r") as f:
+with open(config_path, "w") as f:
         config = json.load(f)
         for key in default_config:
             if key not in config:
                 config[key] = default_config[key]
 except json.JSONDecodeError:
     config = default_config
-    with open(config_path, "w") as f:
-        json.dump(config, f, indent=4)
+with open(config_path, "w") as f:
+    json.dump(config, f, indent=4)
 
 # ---------------------------
 # Authentication
@@ -132,7 +133,7 @@ def vendor_dashboard(vendor_data):
             stock < config["min_stock_buffer_days"] or
             location > config["max_location_risk"]
         ) else "Low Risk 🟢"
-        st.success(f"Predicted Risk for {supplier}: **{risk}**")
+st.success("Settings saved successfully.")
 
 # ---------------------------
 # Main App
@@ -169,8 +170,8 @@ with st.sidebar.expander("📥 Data Input Mode", expanded=False):
     st.button("Save Settings")
 
 with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
-        st.success("Settings saved successfully.")
+    json.dump(config, f, indent=4)
+st.success("Settings saved successfully.")
 
     st.sidebar.title("Navigation")
     choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
@@ -201,3 +202,4 @@ with open(config_path, "w") as f:
 
 if __name__ == "__main__":
     main()
+
