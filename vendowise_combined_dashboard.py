@@ -175,6 +175,8 @@ if st.session_state.get("logged_in"):
         inventory_data = pd.read_csv(inv_file) if inv_file else None
         vendor_data = pd.read_csv(ven_file) if ven_file else None
 
+    data_input_mode = st.radio("Choose data input mode", ["Sample Data", "Upload Your File"], index=0)
+    st.button("Save Settings")
     if choice == "Inventory Dashboard":
         if inventory_data is not None:
             inventory_dashboard(inventory_data)
