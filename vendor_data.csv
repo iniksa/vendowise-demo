@@ -1,0 +1,6 @@
+vendor_name,item_code,po_number,po_date,expected_delivery_date,actual_delivery_date,ordered_qty,received_qty,rejected_qty,freight_cost,payment_terms_days,stock_buffer_days,location_risk
+Alpha Ltd,ITEM001,PO1001,2024-12-01,2024-12-10,2024-12-10,100,100,2,500,30,15,3
+Bravo Corp,ITEM002,PO1002,2024-12-05,2024-12-15,2024-12-17,200,190,10,700,60,5,6
+Charlie Inc,ITEM003,PO1003,2024-12-10,2024-12-20,2024-12-19,150,150,1,600,45,10,4
+Delta LLC,ITEM004,PO1004,2024-12-15,2024-12-25,2024-12-30,250,220,5,900,90,3,8
+Echo Pvt,ITEM005,PO1005,2024-12-20,2024-12-30,2024-12-29,300,300,0,400,30,20,2

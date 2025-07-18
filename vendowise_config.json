@@ -1,0 +1,15 @@
+{
+    "use_rejected_qty": true,
+    "use_freight_cost": true,
+    "use_payment_terms": true,
+    "use_stock_buffer": true,
+    "use_location_risk": true,
+    "use_partial_delivery": false,
+    "thresholds": {
+        "delay_days": 5,
+        "rejection_rate": 0.05,
+        "payment_terms_days": 60,
+        "min_stock_buffer_days": 7,
+        "max_location_risk": 5
+    }
+}
