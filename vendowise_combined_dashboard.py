@@ -41,6 +41,7 @@ if nav == "Supplier Risk":
     import os
     
     # ----------------- PASSWORD PROTECTION -----------------
+    '''
     def check_password():
         def password_entered():
             if st.session_state["password"] == "vendowise123":
@@ -56,7 +57,8 @@ if nav == "Supplier Risk":
             st.error("😕 Password incorrect")
             st.stop()
     
-    check_password()
+    check_password() 
+    '''
     # -------------------------------------------------------
     
     st.set_page_config(page_title="VendoWise Dashboard", layout="wide")
