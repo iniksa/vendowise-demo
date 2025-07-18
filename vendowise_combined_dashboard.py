@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import datetime
@@ -168,7 +167,8 @@ with st.sidebar.expander("🔧 Threshold Configuration", expanded=False):
 with st.sidebar.expander("📥 Data Input Mode", expanded=False):
     data_input_mode = st.radio("Choose data input mode", ["Sample Data", "Upload Your File"], index=0)
     st.button("Save Settings")
-        with open(config_path, "w") as f:
+
+with open(config_path, "w") as f:
             json.dump(config, f, indent=4)
         st.success("Settings saved successfully.")
 
