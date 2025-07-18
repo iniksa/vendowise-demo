@@ -1,0 +1,5 @@
+Item Code,Item Description,Current Stock (Qty),Daily Avg Consumption,Buffer Stock (days),Next PO Delivery Date,PO Delivery Qty,Expected Delay (days)
+ITEM1001,Motor Bracket,200,40,5,2025-07-22,400,2
+ITEM1002,Cooling Fan,500,25,7,2025-07-18,200,0
+ITEM1003,Relay Switch,80,20,4,2025-07-25,100,3
+ITEM1004,Rubber Seal,150,30,3,,0,0
