@@ -29,7 +29,10 @@ st.title("📊 VendoWise Unified Risk Dashboard")
 @st.cache_data
 def load_supplier_data():
     return pd.read_csv("vendor_data.csv")
-    
+
+# Load supplier data into a variable
+df = load_supplier_data()
+
 # Validate required columns
 expected_columns = [
     "Supplier", "Expected Delay (days)", "Rejection Rate",
