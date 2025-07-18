@@ -116,8 +116,8 @@ if nav == "Dashboard":
 # PO Entry Simulation
 elif nav == "PO Entry Simulation":
     st.markdown("## ✏️ PO Entry Simulation")
-    
-    supplier = st.selectbox("Select Supplier", data["Supplier"].unique())
+
+    supplier = st.selectbox("Select Supplier", df["Supplier"].unique())
     
     delay = st.number_input("Expected Delay (days)", min_value=0, max_value=30, value=5)
     reject = st.number_input("Expected Rejection Rate (%)", min_value=0.0, max_value=20.0, value=1.0) / 100
@@ -125,14 +125,12 @@ elif nav == "PO Entry Simulation":
     stock = st.number_input("Available Stock Buffer (days)", min_value=0, max_value=30, value=10)
     location = st.slider("Location Risk Index (0–10)", min_value=0, max_value=10, value=5)
 
-    # Use thresholds from configuration
     max_delay = config["thresholds"].get("delay_days", 5)
     max_reject = config["thresholds"].get("rejection_rate", 0.05)
     max_payment_terms = config["thresholds"].get("payment_terms_days", 60)
     min_stock_buffer = config["thresholds"].get("min_stock_buffer_days", 7)
     max_location_risk = config["thresholds"].get("max_location_risk", 5)
 
-    # Risk logic based on thresholds
     risk = "High Risk 🔴" if (
         (config["use_rejected_qty"] and reject > max_reject) or
         (config["use_payment_terms"] and payment > max_payment_terms) or
@@ -140,7 +138,7 @@ elif nav == "PO Entry Simulation":
         (config["use_location_risk"] and location > max_location_risk) or
         (delay > max_delay)
     ) else "Low Risk 🟢"
-    
+
     st.success(f"Predicted Risk for **{supplier}**: **{risk}**")
 
 # Configuration
