@@ -112,12 +112,38 @@ if nav == "Dashboard":
         ax.set_xlabel("Reason")
         plt.xticks(rotation=45)
         st.pyplot(fig)
-
+        
+# PO Entry Simulation
 elif nav == "PO Entry Simulation":
-    st.title("📦 PO Entry Simulation")
-    st.write("This panel will simulate PO creation and alert users if risk thresholds are exceeded.")
-    st.dataframe(df[["Supplier", "ordered_qty", "received_qty", "expected_delivery_date", "actual_delivery_date", "Risk Reasons"]])
+    st.markdown("## ✏️ PO Entry Simulation")
+    
+    supplier = st.selectbox("Select Supplier", data["Supplier"].unique())
+    
+    delay = st.number_input("Expected Delay (days)", min_value=0, max_value=30, value=5)
+    reject = st.number_input("Expected Rejection Rate (%)", min_value=0.0, max_value=20.0, value=1.0) / 100
+    payment = st.number_input("Payment Terms (days)", min_value=15, max_value=120, value=45)
+    stock = st.number_input("Available Stock Buffer (days)", min_value=0, max_value=30, value=10)
+    location = st.slider("Location Risk Index (0–10)", min_value=0, max_value=10, value=5)
 
+    # Use thresholds from configuration
+    max_delay = config["thresholds"].get("delay_days", 5)
+    max_reject = config["thresholds"].get("rejection_rate", 0.05)
+    max_payment_terms = config["thresholds"].get("payment_terms_days", 60)
+    min_stock_buffer = config["thresholds"].get("min_stock_buffer_days", 7)
+    max_location_risk = config["thresholds"].get("max_location_risk", 5)
+
+    # Risk logic based on thresholds
+    risk = "High Risk 🔴" if (
+        (config["use_rejected_qty"] and reject > max_reject) or
+        (config["use_payment_terms"] and payment > max_payment_terms) or
+        (config["use_stock_buffer"] and stock < min_stock_buffer) or
+        (config["use_location_risk"] and location > max_location_risk) or
+        (delay > max_delay)
+    ) else "Low Risk 🟢"
+    
+    st.success(f"Predicted Risk for **{supplier}**: **{risk}**")
+
+# Configuration
 elif nav == "Configuration Panel":
     st.title("⚙️ Configuration Settings")
     with st.form("config_form"):
