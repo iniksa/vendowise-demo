@@ -48,7 +48,7 @@ def login():
     if st.button("Login"):
         if username == "admin" and password == "vendowise123":
             st.session_state["logged_in"] = True
-        else:
+    else:
             st.error("Invalid credentials")
             st.stop()
 
@@ -180,23 +180,23 @@ if st.session_state.get("logged_in"):
 
 # Load data
     if data_input_mode == "Sample Data":
-    inventory_data = load_sample_inventory()
-    vendor_data = load_sample_vendor()
+        inventory_data = load_sample_inventory()
+        vendor_data = load_sample_vendor()
     else:
-    inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
-    ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
-    inventory_data = pd.read_csv(inv_file) if inv_file else None
-    vendor_data = pd.read_csv(ven_file) if ven_file else None
+        inv_file = st.sidebar.file_uploader("Upload Inventory CSV", type=["csv"])
+        ven_file = st.sidebar.file_uploader("Upload Vendor CSV", type=["csv"])
+        inventory_data = pd.read_csv(inv_file) if inv_file else None
+        vendor_data = pd.read_csv(ven_file) if ven_file else None
 
     if choice == "Inventory Dashboard":
         if inventory_data is not None:
             inventory_dashboard(inventory_data)
-        else:
+    else:
             st.warning("Upload or select sample inventory data.")
     elif choice == "Vendor Dashboard":
         if vendor_data is not None:
             vendor_dashboard(vendor_data)
-        else:
+    else:
             st.warning("Upload or select sample vendor data.")
     elif choice == "Logout":
         st.session_state["logged_in"] = False
