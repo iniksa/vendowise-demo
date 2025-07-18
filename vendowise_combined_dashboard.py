@@ -173,11 +173,13 @@ with open(config_path, "w") as f:
     json.dump(config, f, indent=4)
 st.success("Settings saved successfully.")
 
-st.sidebar.title("Navigation")
+
+if st.session_state.get("logged_in"):
+    st.sidebar.title("Navigation")
 choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
 
 # Load data
-if data_input_mode == "Sample Data":
+    if data_input_mode == "Sample Data":
     inventory_data = load_sample_inventory()
     vendor_data = load_sample_vendor()
 else:
