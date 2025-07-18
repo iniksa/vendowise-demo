@@ -23,12 +23,23 @@ if not os.path.exists(config_path):
     with open(config_path, "w") as f:
         json.dump(default_config, f, indent=4)
 
-with open(config_path, "r") as f:
-    config = json.load(f)
-    # Ensure all expected keys exist
-    for key in default_config:
-        if key not in config:
-            config[key] = default_config[key]
+
+if not os.path.exists(config_path):
+    with open(config_path, "w") as f:
+        json.dump(default_config, f, indent=4)
+
+# Load or restore config safely
+try:
+    with open(config_path, "r") as f:
+        config = json.load(f)
+        for key in default_config:
+            if key not in config:
+                config[key] = default_config[key]
+except json.JSONDecodeError:
+    config = default_config
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=4)
+
     config = json.load(f)
 
 # ---------------------------
