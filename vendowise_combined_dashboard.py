@@ -159,6 +159,12 @@ def main():
     max_payment_terms = st.slider("Max Payment Terms (Days)", 15, 120, 45)
 
     data_input_mode = st.radio("Choose data input mode", ["Sample Data", "Upload Your File"], index=0)
+    if data_input_mode == "Sample Data":
+        inventory_data = load_sample_inventory()
+        vendor_data = load_sample_vendor()
+    else:
+        inventory_data = pd.read_csv(inv_file) if inv_file else None
+        vendor_data = pd.read_csv(ven_file) if ven_file else None
     st.button("Save Settings")
 
 with open(config_path, "w") as f:
@@ -169,14 +175,7 @@ if st.session_state.get("logged_in"):
     main()
 
 # Load data
-    if data_input_mode == "Sample Data":
-        inventory_data = load_sample_inventory()
-        vendor_data = load_sample_vendor()
-        inventory_data = pd.read_csv(inv_file) if inv_file else None
-        vendor_data = pd.read_csv(ven_file) if ven_file else None
 
-    data_input_mode = st.radio("Choose data input mode", ["Sample Data", "Upload Your File"], index=0)
-    st.button("Save Settings")
     if choice == "Inventory Dashboard":
         if inventory_data is not None:
             inventory_dashboard(inventory_data)
