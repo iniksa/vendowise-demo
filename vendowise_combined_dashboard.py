@@ -156,7 +156,13 @@ def main():
 
     st.sidebar.title("Supplier Risk Intelligence Hub")
 
-    st.sidebar.header("Threshold Configuration")
+    with st.sidebar.expander("⚙️ Threshold Configuration", expanded=True):
+    config["min_stock_buffer_days"] = st.slider("Min Stock Buffer (Days)", 0, 30, config["min_stock_buffer_days"])
+    config["delay_days"] = st.slider("Max Acceptable Delivery Delay (Days)", 0, 15, config["delay_days"])
+    config["max_po_delay"] = st.slider("Max PO Delay", 0, 30, config["max_po_delay"])
+    config["max_location_risk"] = st.slider("Max Location Risk Score", 0, 10, config["max_location_risk"])
+    config["max_reject"] = st.slider("Max Rejection Rate (%)", 0.0, 20.0, config["max_reject"] * 100) / 100
+    config["max_payment_terms"] = st.slider("Max Payment Terms (Days)", 15, 120, config["max_payment_terms"])
     config["min_stock_buffer_days"] = st.sidebar.slider("Min Stock Buffer (Days)", 0, 30, config["min_stock_buffer_days"])
     config["delay_days"] = st.sidebar.slider("Max Acceptable Delivery Delay (Days)", 0, 15, config["delay_days"])
     config["max_po_delay"] = st.sidebar.slider("Max PO Delay", 0, 30, config["max_po_delay"])
@@ -164,14 +170,21 @@ def main():
     config["max_reject"] = st.sidebar.slider("Max Rejection Rate (%)", 0.0, 20.0, config["max_reject"] * 100) / 100
     config["max_payment_terms"] = st.sidebar.slider("Max Payment Terms (Days)", 15, 120, config["max_payment_terms"])
 
-    data_mode = st.sidebar.radio("Choose data input mode", ["Sample Data", "Upload Your File"])
+    with st.sidebar.expander("📁 Upload Data", expanded=False):
+    data_mode = st.radio("Choose data input mode", ["Sample Data", "Upload Your File"])
+    if st.button("Save Settings"):
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=4)
+        st.success("Settings saved successfully.")
+    
     if st.sidebar.button("Save Settings"):
         with open(config_path, "w") as f:
             json.dump(config, f, indent=4)
         st.success("Settings saved successfully.")
 
-    st.sidebar.title("Navigation")
-    choice = st.sidebar.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
+    with st.sidebar.expander("🧭 Navigation", expanded=True):
+    choice = st.radio("Go to", ["Inventory Dashboard", "Vendor Dashboard", "Logout"])
+    
 
     # Load data
     if data_mode == "Sample Data":
