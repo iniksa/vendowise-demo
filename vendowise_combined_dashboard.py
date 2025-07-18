@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import datetime
@@ -138,6 +139,9 @@ def vendor_dashboard(vendor_data):
 # Main App
 # ---------------------------
 def main():
+    if not st.session_state.get('authenticated', False):
+        show_login()
+        st.stop()
     st.set_page_config(page_title="VendoWise", layout="wide")
 
     if "logged_in" not in st.session_state:
