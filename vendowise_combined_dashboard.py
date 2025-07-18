@@ -25,6 +25,11 @@ if not os.path.exists(config_path):
 
 with open(config_path, "r") as f:
     config = json.load(f)
+    # Ensure all expected keys exist
+    for key in default_config:
+        if key not in config:
+            config[key] = default_config[key]
+    config = json.load(f)
 
 # ---------------------------
 # Authentication
